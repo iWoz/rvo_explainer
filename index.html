@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RVO 算法交互式演示</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══════════════ Header ═══════════════ -->
+<div class="header">
+    <h1><span>RVO</span> 算法交互式演示</h1>
+    <span class="subtitle">深入理解速度障碍 (VO) · 互惠速度障碍 (RVO) · ORCA 碰撞避免算法</span>
+</div>
+
+<!-- ═══════════════ Tab Bar ═══════════════ -->
+<div class="tab-bar">
+    <button class="tab-btn active" data-tab="theory">原理讲解</button>
+    <button class="tab-btn" data-tab="comparison">算法对比</button>
+    <button class="tab-btn" data-tab="playground">自由实验</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     Tab 1: 原理讲解
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="tab-theory" class="tab-content active">
+    <!-- Controls -->
+    <div class="controls-bar">
+        <label>算法:
+            <select id="theory-algo">
+                <option value="NONE">无避障</option>
+                <option value="VO">VO (速度障碍)</option>
+                <option value="RVO" selected>RVO (互惠速度障碍)</option>
+                <option value="ORCA">ORCA (最优互惠避障)</option>
+            </select>
+        </label>
+        <div class="sep"></div>
+        <button id="theory-play" class="ctrl-btn primary">▶ 播放</button>
+        <button id="theory-step" class="ctrl-btn">单步</button>
+        <button id="theory-reset" class="ctrl-btn">重置</button>
+        <div class="sep"></div>
+        <label class="toggle"><input type="checkbox" id="show-cones" checked> VO锥体</label>
+        <label class="toggle"><input type="checkbox" id="show-velocity" checked> 速度向量</label>
+        <label class="toggle"><input type="checkbox" id="show-trails" checked> 运动轨迹</label>
+        <label class="toggle"><input type="checkbox" id="show-goals" checked> 目标点</label>
+        <label class="toggle"><input type="checkbox" id="show-velspace" checked> 速度空间</label>
+    </div>
+
+    <!-- Content -->
+    <div class="theory-layout">
+        <div class="theory-left">
+            <div class="canvas-area">
+                <canvas id="theory-canvas"></canvas>
+            </div>
+        </div>
+        <div class="theory-right" id="theory-desc">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     Tab 2: 算法对比
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="tab-comparison" class="tab-content">
+    <!-- Controls -->
+    <div class="controls-bar">
+        <label>场景:
+            <select id="comp-scene"></select>
+        </label>
+        <div class="sep"></div>
+        <label>左侧算法:
+            <select id="comp-algo-left">
+                <option value="NONE">无避障</option>
+                <option value="VO" selected>VO</option>
+                <option value="RVO">RVO</option>
+                <option value="ORCA">ORCA</option>
+            </select>
+        </label>
+        <label>右侧算法:
+            <select id="comp-algo-right">
+                <option value="NONE">无避障</option>
+                <option value="VO">VO</option>
+                <option value="RVO" selected>RVO</option>
+                <option value="ORCA">ORCA</option>
+            </select>
+        </label>
+        <div class="sep"></div>
+        <button id="comp-play" class="ctrl-btn primary">▶ 播放</button>
+        <button id="comp-step" class="ctrl-btn">单步</button>
+        <button id="comp-reset" class="ctrl-btn">重置</button>
+    </div>
+
+    <!-- Side-by-side canvases -->
+    <div class="canvas-split">
+        <div class="canvas-half">
+            <div class="canvas-label" id="comp-label-left">VO</div>
+            <canvas id="comp-canvas-left"></canvas>
+        </div>
+        <div class="canvas-half">
+            <div class="canvas-label" id="comp-label-right">RVO</div>
+            <canvas id="comp-canvas-right"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     Tab 3: 自由实验
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="tab-playground" class="tab-content">
+    <div class="playground-layout">
+        <div class="canvas-area" style="flex:1">
+            <canvas id="play-canvas"></canvas>
+        </div>
+        <div class="playground-sidebar">
+            <!-- Scene -->
+            <div class="sidebar-section">
+                <h4>场景</h4>
+                <select id="play-scene"></select>
+            </div>
+            <!-- Algorithm -->
+            <div class="sidebar-section">
+                <h4>算法</h4>
+                <select id="play-algo">
+                    <option value="NONE">无避障</option>
+                    <option value="VO">VO (速度障碍)</option>
+                    <option value="RVO" selected>RVO (互惠速度障碍)</option>
+                    <option value="ORCA">ORCA (最优互惠避障)</option>
+                </select>
+            </div>
+            <!-- Parameters -->
+            <div class="sidebar-section">
+                <h4>参数</h4>
+                <div class="field">
+                    <label>时间窗 (τ)</label>
+                    <span id="play-horizon-val">5.0</span>
+                </div>
+                <input type="range" id="play-horizon" min="0.5" max="15" step="0.5" value="5">
+                <div class="field">
+                    <label>最大速度</label>
+                    <span id="play-speed-val">80</span>
+                </div>
+                <input type="range" id="play-speed" min="20" max="200" step="10" value="80">
+            </div>
+            <!-- Playback -->
+            <div class="sidebar-section">
+                <h4>控制</h4>
+                <div class="btn-group">
+                    <button id="play-play" class="ctrl-btn primary">▶ 播放</button>
+                    <button id="play-step" class="ctrl-btn">单步</button>
+                    <button id="play-reset" class="ctrl-btn">重置</button>
+                </div>
+            </div>
+            <!-- Tips -->
+            <div class="sidebar-section">
+                <h4>操作提示</h4>
+                <p style="font-size:12px;color:var(--text-dim);line-height:1.6">
+                    · 点击智能体可选中它，查看其速度空间<br>
+                    · 调整「时间窗」控制避障的前瞻距离<br>
+                    · 尝试不同算法和场景的组合<br>
+                    · 在「算法对比」页可以同步对比两种算法
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ Scripts ═══════════════ -->
+<script src="js/vec2.js"></script>
+<script src="js/algorithms.js"></script>
+<script src="js/agent.js"></script>
+<script src="js/simulator.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

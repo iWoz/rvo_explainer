@@ -1,0 +1,464 @@
+/* ═══════════════════════════════════════════════════════════════════
+   RVO Explainer — Styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+    --bg: #0c0f14;
+    --surface: #151a24;
+    --surface2: #1c2230;
+    --border: #2a3040;
+    --text: #d0d5e0;
+    --text-dim: #7a8498;
+    --accent: #4A90D9;
+    --accent2: #2ecc71;
+    --red: #E74C3C;
+    --yellow: #F1C40F;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+
+.header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
+}
+
+.header h1 span {
+    color: var(--accent);
+}
+
+.header .subtitle {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+/* ── Tabs ────────────────────────────────────────────────── */
+
+.tab-bar {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+    font-family: inherit;
+}
+
+.tab-btn:hover {
+    color: var(--text);
+}
+
+.tab-btn.active {
+    color: var(--accent);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+}
+
+.tab-content {
+    display: none;
+    height: calc(100vh - 110px);
+}
+
+.tab-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Controls Bar ────────────────────────────────────────── */
+
+.controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    min-height: 44px;
+}
+
+.controls-bar label {
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.controls-bar select,
+.controls-bar input[type="range"] {
+    font-size: 12px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-family: inherit;
+}
+
+.controls-bar select {
+    min-width: 100px;
+    cursor: pointer;
+}
+
+.controls-bar input[type="range"] {
+    width: 80px;
+    accent-color: var(--accent);
+}
+
+.ctrl-btn {
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.ctrl-btn:hover {
+    background: var(--surface2);
+    border-color: var(--accent);
+}
+
+.ctrl-btn.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.ctrl-btn.primary:hover {
+    background: #5aa0e9;
+}
+
+.sep {
+    width: 1px;
+    height: 22px;
+    background: var(--border);
+    margin: 0 4px;
+}
+
+/* ── Checkbox toggle ─────────────────────────────────────── */
+
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.toggle input[type="checkbox"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+/* ── Canvas containers ───────────────────────────────────── */
+
+.canvas-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+}
+
+.canvas-area canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.canvas-split {
+    display: flex;
+    flex: 1;
+    gap: 2px;
+    min-height: 0;
+}
+
+.canvas-half {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.canvas-half canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.canvas-label {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    pointer-events: none;
+    z-index: 2;
+    backdrop-filter: blur(4px);
+}
+
+/* ── Theory layout ───────────────────────────────────────── */
+
+.theory-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.theory-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.theory-right {
+    width: 380px;
+    max-width: 35%;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.theory-right h3 {
+    color: #fff;
+    font-size: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.theory-right p {
+    font-size: 13.5px;
+    line-height: 1.7;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.theory-right .hint {
+    color: var(--text-dim);
+    font-size: 12.5px;
+    padding: 8px 12px;
+    background: rgba(74, 144, 217, 0.08);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    margin-top: 12px;
+}
+
+.math-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: 'Cambria Math', 'Latin Modern Math', 'STIX Two Math', Georgia, serif;
+    font-size: 14px;
+    color: #e8e8e8;
+    margin: 10px 0;
+    overflow-x: auto;
+    text-align: center;
+    letter-spacing: 0.3px;
+}
+
+.highlight-cone {
+    color: var(--red);
+    font-weight: 600;
+}
+
+.highlight-green {
+    color: var(--accent2);
+    font-weight: 600;
+}
+
+.highlight-red {
+    color: var(--red);
+    font-weight: 600;
+}
+
+.highlight-yellow {
+    color: var(--yellow);
+    font-weight: 600;
+}
+
+/* ── Playground layout ───────────────────────────────────── */
+
+.playground-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.playground-sidebar {
+    width: 260px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sidebar-section h4 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+}
+
+.sidebar-section .field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.sidebar-section .field label {
+    font-size: 13px;
+    color: var(--text);
+}
+
+.sidebar-section .field span {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    min-width: 30px;
+    text-align: right;
+}
+
+.sidebar-section select {
+    width: 100%;
+    font-size: 13px;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-family: inherit;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+
+.sidebar-section input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+}
+
+.btn-group {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-group .ctrl-btn {
+    flex: 1;
+    text-align: center;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+    .theory-right {
+        width: 280px;
+    }
+    .playground-sidebar {
+        width: 220px;
+    }
+}
+
+@media (max-width: 700px) {
+    .theory-layout {
+        flex-direction: column;
+    }
+    .theory-right {
+        width: 100%;
+        max-width: 100%;
+        max-height: 35vh;
+        border-left: none;
+        border-top: 1px solid var(--border);
+    }
+    .canvas-split {
+        flex-direction: column;
+    }
+    .playground-layout {
+        flex-direction: column;
+    }
+    .playground-sidebar {
+        width: 100%;
+        max-height: 40vh;
+        border-left: none;
+        border-top: 1px solid var(--border);
+    }
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--surface);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3a4a60;
+}
