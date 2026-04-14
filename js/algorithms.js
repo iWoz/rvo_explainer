@@ -278,6 +278,7 @@ const Algorithms = (() => {
         const relVel = agentA.velocity.sub(agentB.velocity);
         const combinedRadius = agentA.radius + agentB.radius;
         const combinedRadiusSq = combinedRadius * combinedRadius;
+        let constraintKind = 'cone';
 
         // ── Symmetry-breaking for collinear approach ──────────────
         // When agents approach nearly head-on (relVel ∥ relPos), the ORCA
@@ -316,6 +317,7 @@ const Algorithms = (() => {
                 const unitW = w.scale(1 / wLen);
                 direction = new Vec2(unitW.y, -unitW.x);
                 u = unitW.scale(combinedRadius * invTimeHorizon - wLen);
+                constraintKind = 'truncation';
             } else {
                 // Project on cone edge
                 const leg = Math.sqrt(Math.max(0, distSq - combinedRadiusSq));
@@ -334,6 +336,7 @@ const Algorithms = (() => {
                 }
                 const dotProduct2 = relVel.dot(direction);
                 u = direction.scale(dotProduct2).sub(relVel);
+                constraintKind = 'cone';
             }
         } else {
             // Already colliding — push apart immediately
@@ -350,11 +353,24 @@ const Algorithms = (() => {
                 direction = new Vec2(unitW.y, -unitW.x);
                 u = unitW.scale(combinedRadius * invTimeStep - wLen);
             }
+            constraintKind = 'collision';
         }
 
+        const point = agentA.velocity.add(u.scale(0.5));
+
         return {
-            point: agentA.velocity.add(u.scale(0.5)),
-            direction: direction
+            point,
+            direction,
+            normal: direction.perp(),
+            u,
+            responsibilityShift: u.scale(0.5),
+            sourceVelocity: agentA.velocity.clone(),
+            relativePosition: relPos,
+            relativeVelocity: relVel,
+            combinedRadius,
+            distance: dist,
+            timeHorizon,
+            constraintKind
         };
     }
 
@@ -452,6 +468,14 @@ const Algorithms = (() => {
         return best;
     }
 
+    /**
+     * Signed distance from a velocity to the valid side of an ORCA line.
+     * Negative means the velocity violates the half-plane constraint.
+     */
+    function signedDistanceToORCALine(line, velocity) {
+        return line.direction.perp().dot(velocity.sub(line.point));
+    }
+
     // ── Public API ─────────────────────────────────────────────────────
 
     return {
@@ -461,7 +485,8 @@ const Algorithms = (() => {
         isInsideCone,
         selectVelocity,
         selectVelocityORCA,
-        projectOntoConeEdges
+        projectOntoConeEdges,
+        signedDistanceToORCALine
     };
 
 })();

@@ -24,6 +24,8 @@ class Renderer {
         this.showGoals = true;
         this.showTrails = true;
         this.showVelocitySpace = true;
+        this.lessonMode = null;
+        this.lessonStep = 0;
 
         // Trails
         this.trails = new Map();
@@ -209,6 +211,74 @@ class Renderer {
         }
     }
 
+    _pickPrimaryOrcaLine(agent, debugData) {
+        const lines = debugData?.orcaLines;
+        if (!agent || !lines || lines.length === 0) return null;
+
+        let primary = lines[0];
+        let bestScore = Infinity;
+        for (const line of lines) {
+            const signed = Algorithms.signedDistanceToORCALine(line, agent.preferredVelocity);
+            const score = signed < 0 ? signed : 1000 + Math.abs(signed);
+            if (score < bestScore) {
+                bestScore = score;
+                primary = line;
+            }
+        }
+        return primary;
+    }
+
+    _drawORCALessonWorld(agent, debugData) {
+        if (this.lessonMode !== 'ORCA' || !agent || !debugData?.orcaLines?.length) return;
+
+        const line = this._pickPrimaryOrcaLine(agent, debugData);
+        if (!line || !line.otherAgent) return;
+
+        const ctx = this.ctx;
+        const other = line.otherAgent;
+        const midpoint = agent.position.lerp(other.position, 0.5);
+
+        ctx.save();
+
+        for (const focus of [agent, other]) {
+            ctx.beginPath();
+            ctx.arc(focus.position.x, focus.position.y, focus.radius + 10, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.setLineDash([8, 6]);
+        ctx.moveTo(agent.position.x, agent.position.y);
+        ctx.lineTo(other.position.x, other.position.y);
+        ctx.strokeStyle = this.lessonStep === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.28)';
+        ctx.lineWidth = this.lessonStep === 0 ? 2 : 1.2;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (this.lessonStep === 0) {
+            ctx.beginPath();
+            ctx.arc(other.position.x, other.position.y, line.combinedRadius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(241,196,15,0.08)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(241,196,15,0.55)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            this._drawOverlayTag(midpoint.x, midpoint.y - 14, '相对位置', {
+                bg: 'rgba(15,25,35,0.88)',
+                border: 'rgba(255,255,255,0.16)'
+            });
+            this._drawOverlayTag(other.position.x, other.position.y - line.combinedRadius - 14, '安全边界', {
+                bg: 'rgba(241,196,15,0.14)',
+                border: 'rgba(241,196,15,0.55)'
+            });
+        }
+
+        ctx.restore();
+    }
+
     _drawCone(ctx, cone, agent) {
         // In world-space, draw the cone centered at the agent's position,
         // using the cone's angular spread to show which directions are blocked.
@@ -335,6 +405,8 @@ class Renderer {
             }
         }
 
+        this._drawVelocityLessonOverlay(agent, debugData, cx, cy, scale, size);
+
         // Preferred velocity (green dot + arrow)
         if (agent.preferredVelocity) {
             const pv = agent.preferredVelocity;
@@ -376,6 +448,168 @@ class Renderer {
         ctx.fillStyle = 'rgba(255,255,255,0.5)';
         ctx.fillText('实际', x + 70, ly);
 
+        ctx.restore();
+    }
+
+    _drawVelocityLessonOverlay(agent, debugData, cx, cy, scale, size) {
+        if (this.lessonMode !== 'ORCA' || !debugData?.orcaLines?.length) return;
+
+        const line = this._pickPrimaryOrcaLine(agent, debugData);
+        if (!line) return;
+
+        const ctx = this.ctx;
+        const normal = (line.normal || line.direction.perp()).normalize();
+        const linePoint = new Vec2(cx + line.point.x * scale, cy + line.point.y * scale);
+        const prefPoint = new Vec2(
+            cx + agent.preferredVelocity.x * scale,
+            cy + agent.preferredVelocity.y * scale
+        );
+        const chosenPoint = new Vec2(
+            cx + agent.velocity.x * scale,
+            cy + agent.velocity.y * scale
+        );
+        const sourceVelocity = line.sourceVelocity || agent.velocity;
+        const sourcePoint = new Vec2(
+            cx + sourceVelocity.x * scale,
+            cy + sourceVelocity.y * scale
+        );
+        const prefSigned = Algorithms.signedDistanceToORCALine(line, agent.preferredVelocity);
+        const prefProjectionVel = agent.preferredVelocity.sub(normal.scale(prefSigned));
+        const prefProjection = new Vec2(
+            cx + prefProjectionVel.x * scale,
+            cy + prefProjectionVel.y * scale
+        );
+
+        ctx.save();
+
+        if (this.lessonStep >= 3) {
+            this._fillHalfPlaneOverlay(linePoint, line.direction, normal, size);
+        }
+
+        if (this.lessonStep >= 1) {
+            this._drawPointRing(prefPoint.x, prefPoint.y, 'rgba(231,76,60,0.9)', 9);
+            this._drawOverlayTag(prefPoint.x + 16, prefPoint.y - 14, 'v_pref', {
+                bg: 'rgba(46,204,113,0.16)',
+                border: 'rgba(46,204,113,0.6)'
+            });
+
+            if (prefSigned < 0) {
+                ctx.beginPath();
+                ctx.setLineDash([5, 4]);
+                ctx.moveTo(prefPoint.x, prefPoint.y);
+                ctx.lineTo(prefProjection.x, prefProjection.y);
+                ctx.strokeStyle = 'rgba(231,76,60,0.7)';
+                ctx.lineWidth = 1.6;
+                ctx.stroke();
+                ctx.setLineDash([]);
+                this._drawPointRing(prefProjection.x, prefProjection.y, 'rgba(231,76,60,0.55)', 7);
+            }
+        }
+
+        if (this.lessonStep >= 2) {
+            this._drawPointRing(sourcePoint.x, sourcePoint.y, 'rgba(116,185,255,0.72)', 7);
+            this._drawPointRing(linePoint.x, linePoint.y, 'rgba(116,185,255,0.95)', 8);
+            this._drawArrow(
+                ctx,
+                sourcePoint.x,
+                sourcePoint.y,
+                linePoint.x,
+                linePoint.y,
+                'rgba(116,185,255,0.95)',
+                1.6,
+                []
+            );
+            this._drawOverlayTag((sourcePoint.x + linePoint.x) / 2, (sourcePoint.y + linePoint.y) / 2 - 16, '1/2u', {
+                bg: 'rgba(116,185,255,0.16)',
+                border: 'rgba(116,185,255,0.65)'
+            });
+        }
+
+        if (this.lessonStep >= 3) {
+            const normalEnd = linePoint.add(normal.scale(38));
+            this._drawArrow(
+                ctx,
+                linePoint.x,
+                linePoint.y,
+                normalEnd.x,
+                normalEnd.y,
+                'rgba(241,196,15,0.95)',
+                1.8,
+                []
+            );
+            this._drawOverlayTag(normalEnd.x + 12, normalEnd.y - 10, '合法侧', {
+                bg: 'rgba(241,196,15,0.14)',
+                border: 'rgba(241,196,15,0.65)'
+            });
+        }
+
+        if (this.lessonStep >= 4) {
+            ctx.beginPath();
+            ctx.setLineDash([5, 4]);
+            ctx.moveTo(prefPoint.x, prefPoint.y);
+            ctx.lineTo(chosenPoint.x, chosenPoint.y);
+            ctx.strokeStyle = 'rgba(255,255,255,0.72)';
+            ctx.lineWidth = 1.6;
+            ctx.stroke();
+            ctx.setLineDash([]);
+            this._drawPointRing(chosenPoint.x, chosenPoint.y, 'rgba(255,255,255,0.95)', 10);
+            this._drawOverlayTag(chosenPoint.x + 18, chosenPoint.y + 14, 'v_new', {
+                bg: 'rgba(255,255,255,0.12)',
+                border: 'rgba(255,255,255,0.45)'
+            });
+        }
+
+        ctx.restore();
+    }
+
+    _fillHalfPlaneOverlay(linePoint, direction, normal, size) {
+        const ctx = this.ctx;
+        const tangent = direction.scale(size * 1.2);
+        const normalSpan = normal.scale(size * 1.2);
+
+        ctx.beginPath();
+        ctx.moveTo(linePoint.x - tangent.x, linePoint.y - tangent.y);
+        ctx.lineTo(linePoint.x + tangent.x, linePoint.y + tangent.y);
+        ctx.lineTo(linePoint.x + tangent.x + normalSpan.x, linePoint.y + tangent.y + normalSpan.y);
+        ctx.lineTo(linePoint.x - tangent.x + normalSpan.x, linePoint.y - tangent.y + normalSpan.y);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(241,196,15,0.08)';
+        ctx.fill();
+    }
+
+    _drawPointRing(x, y, color, radius) {
+        const ctx = this.ctx;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    _drawOverlayTag(x, y, text, options = {}) {
+        const ctx = this.ctx;
+        const bg = options.bg || 'rgba(15,25,35,0.86)';
+        const border = options.border || 'rgba(255,255,255,0.22)';
+        const textColor = options.text || 'rgba(255,255,255,0.92)';
+        const padX = 6;
+
+        ctx.save();
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const width = ctx.measureText(text).width + padX * 2;
+        const height = 22;
+
+        ctx.beginPath();
+        ctx.roundRect(x - width / 2, y - height / 2, width, height, 6);
+        ctx.fillStyle = bg;
+        ctx.fill();
+        ctx.strokeStyle = border;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.fillStyle = textColor;
+        ctx.fillText(text, x, y + 0.5);
         ctx.restore();
     }
 
@@ -483,6 +717,11 @@ class Renderer {
                 const dd = simulator.debugData.get(agent.id);
                 this.drawVOCones(agent, dd);
             }
+        }
+
+        if (selectedAgent) {
+            const dd = simulator.debugData.get(selectedAgent.id);
+            this._drawORCALessonWorld(selectedAgent, dd);
         }
 
         // Velocity arrows
